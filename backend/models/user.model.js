@@ -51,6 +51,14 @@ const userSchema = mongoose.Schema(
   { timestamps: true }
 );
 
+userSchema.statics.findByUsername = function (username) {
+  return this.findOne({ username });
+};
+
+userSchema.query.withoutPassword = function () {
+  return this.select("-password");
+};
+
 const User = mongoose.model("User", userSchema);
 
 export default User;

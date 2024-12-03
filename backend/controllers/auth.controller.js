@@ -118,3 +118,15 @@ export const logout = (req, res) => {
       .json({ success: false, msg: "Internal server error" });
   }
 };
+
+export const checkAuth = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    return res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, msg: "Internal server error" });
+  }
+};

@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 
 import User from "../models/user.model.js";
-import { generateTokenAndSetCookie } from "../utils/cookie.js";
+import { generateTokenAndSetCookie, removeCookie } from "../utils/cookie.js";
 
 export const signup = async (req, res) => {
   const { email, password, fullName, username } = req.body;
@@ -95,16 +95,26 @@ export const login = async (req, res) => {
     }
 
     generateTokenAndSetCookie(user._id, res);
-    return res
-      .status(200)
-      .json({
-        success: true,
-        user: { ...user._doc, password: undefined },
-        msg: "Logged in successfully",
-      });
+    return res.status(200).json({
+      success: true,
+      user: { ...user._doc, password: undefined },
+      msg: "Logged in successfully",
+    });
   } catch (error) {
     console.log(error);
     return res.status().json({ success: false, msg: "Internal server error" });
   }
 };
-export const logout = (req, res) => {};
+export const logout = (req, res) => {
+  try {
+    removeCookie(res);
+    return res
+      .status(200)
+      .json({ success: true, msg: "Logged out successfully" });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, msg: "Internal server error" });
+  }
+};

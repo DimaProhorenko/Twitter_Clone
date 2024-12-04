@@ -1,5 +1,6 @@
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
+import { hashPassword, validatePassword } from "../utils/password.js";
 
 export const getUserProfile = async (req, res) => {
   const { username } = req.params;
@@ -108,6 +109,62 @@ export const getSuggestedUsers = async (req, res) => {
     return res.status(500).json({
       success: false,
       msg: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  const { fullName, username, email, currentPassword, newPassword, bio } =
+    req.body;
+
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+
+    if (
+      (!currentPassword && newPassword) ||
+      (!newPassword && currentPassword)
+    ) {
+      return res.status(400).json({
+        success: false,
+        msg: "To change password provide both the current and new passwords",
+      });
+    }
+
+    if (currentPassword && newPassword) {
+      const { isValid, msg } = await validatePassword(
+        currentPassword,
+        user.password
+      );
+
+      if (!isValid) {
+        return res.status(400).json({ success: false, msg });
+      }
+
+      user.password = await hashPassword(newPassword);
+    }
+
+    user.fullName = fullName || user.fullName;
+    user.username = username || user.username;
+    user.bio = bio || user.bio;
+    user.email = email || user.email;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      msg: "User was updated",
+      user: { ...user._doc, password: null },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
       error: error.message,
     });
   }

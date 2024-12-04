@@ -1,3 +1,4 @@
+import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 
 export const getUserProfile = async (req, res) => {
@@ -21,7 +22,7 @@ export const followUnfollowUser = async (req, res) => {
   const { id } = req.params;
 
   try {
-    if (id === req.user._id) {
+    if (id === req.user._id.toString()) {
       return res
         .status(400)
         .json({ success: false, msg: "You can't follow yourself" });
@@ -57,6 +58,14 @@ export const followUnfollowUser = async (req, res) => {
       await currentUser.save();
       await userToFollow.save();
 
+      const notification = new Notification({
+        type: "follow",
+        from: currentUser._id,
+        to: userToFollow._id,
+      });
+
+      await notification.save();
+
       return res
         .status(200)
         .json({ success: true, msg: "Successfully followed the user" });
@@ -64,5 +73,42 @@ export const followUnfollowUser = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false, msg: error.message });
+  }
+};
+
+export const getSuggestedUsers = async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.user._id).select("following");
+
+    if (!currentUser) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+
+    const suggestedUsers = await User.aggregate([
+      {
+        $match: {
+          _id: { $nin: [...currentUser.following, currentUser._id] },
+        },
+      },
+      {
+        $sample: { size: 5 },
+      },
+      {
+        $project: {
+          _id: 1,
+          username: 1,
+          fullName: 1,
+          profileImage: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json({ suggestedUsers });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      msg: "Internal Server Error",
+      error: error.message,
+    });
   }
 };

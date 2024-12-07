@@ -1,6 +1,9 @@
+import { v2 as cloudinary } from "cloudinary";
+
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 import { hashPassword, validatePassword } from "../utils/password.js";
+import { getCloudinaryImageId } from "../utils/helpers.js";
 
 export const getUserProfile = async (req, res) => {
   const { username } = req.params;
@@ -117,6 +120,7 @@ export const getSuggestedUsers = async (req, res) => {
 export const updateUser = async (req, res) => {
   const { fullName, username, email, currentPassword, newPassword, bio } =
     req.body;
+  let { profileImage, coverImage } = req.body;
 
   try {
     const user = await User.findById(req.user._id);
@@ -146,6 +150,26 @@ export const updateUser = async (req, res) => {
       }
 
       user.password = await hashPassword(newPassword);
+    }
+
+    if (profileImage) {
+      if (user.profileImage) {
+        await cloudinary.uploader.destroy(
+          getCloudinaryImageId(user.profileImage)
+        );
+      }
+      const uploadedResponse = await cloudinary.uploader.upload(profileImage);
+      user.profileImage = uploadedResponse.secure_url;
+    }
+
+    if (coverImage) {
+      if (user.coverImage) {
+        await cloudinary.uploader.destroy(
+          getCloudinaryImageId(user.coverImage)
+        );
+      }
+      const uploadedResponse = await cloudinary.uploader.upload(coverImage);
+      user.coverImage = uploadedResponse.secure_url;
     }
 
     user.fullName = fullName || user.fullName;

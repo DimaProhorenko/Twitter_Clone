@@ -37,3 +37,30 @@ export const deleteNotifications = async (req, res) => {
     });
   }
 };
+
+export const deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    const notification = await Notification.findOne({ _id: id, to: userId });
+
+    if (!notification) {
+      return res
+        .status(404)
+        .json({ success: false, msg: "Notification not found" });
+    }
+
+    await notification.deleteOne();
+    return res
+      .status(200)
+      .json({ success: true, msg: "Notification deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
+      error: error.message,
+    });
+  }
+};

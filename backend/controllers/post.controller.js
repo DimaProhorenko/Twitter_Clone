@@ -147,3 +147,24 @@ export const likeUnlikePost = async (req, res) => {
     });
   }
 };
+
+export const getAllPosts = async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .populate({ path: "user", select: "username profileImage" })
+      .populate({
+        path: "comments.user",
+        select: "-password",
+      });
+
+    return res.status(200).json({ success: true, posts });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
+      error: error.message,
+    });
+  }
+};

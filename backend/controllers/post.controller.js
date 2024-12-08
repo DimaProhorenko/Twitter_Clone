@@ -1,6 +1,8 @@
 import Post from "../models/post.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import { getCloudinaryImageId } from "../utils/helpers.js";
+import User from "../models/user.model.js";
+import Notification from "../models/notification.model.js";
 
 export const createPost = async (req, res) => {
   try {
@@ -105,5 +107,43 @@ export const commentOnPost = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, msg: "Internal server", error: error.message });
+  }
+};
+
+export const likeUnlikePost = async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ success: false, msg: "Post not found" });
+    }
+
+    const isLiked = post.likes.includes(userId);
+
+    if (isLiked) {
+      await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
+      await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } });
+      return res.status(200).json({ success: true, msg: "Post was unliked" });
+    } else {
+      post.likes.push(userId);
+      await post.save();
+      await User.updateOne({ _id: userId }, { $push: { likedPosts: postId } });
+      const notification = new Notification({
+        from: userId,
+        to: post.user,
+        type: "like",
+      });
+      await notification.save();
+      return res.status(200).json({ success: true, msg: "Post was liked" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
+      error: error.message,
+    });
   }
 };

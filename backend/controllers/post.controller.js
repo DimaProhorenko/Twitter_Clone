@@ -224,3 +224,32 @@ export const getFollowingPosts = async (req, res) => {
     });
   }
 };
+
+export const getUserPosts = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+    const posts = await Post.find({ user: user._id })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "user",
+        select: "username profileImage",
+      })
+      .populate({
+        path: "comments.user",
+        select: "username profileImage",
+      });
+
+    return res.status(200).json({ success: true, posts });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      msg: "Internal server error",
+      error: error.message,
+    });
+  }
+};

@@ -173,7 +173,7 @@ export const updateUser = async (req, res) => {
     }
 
     user.fullName = fullName || user.fullName;
-    user.username = username || user.username;
+    user.username = username?.toLowerCase() || user.username;
     user.bio = bio || user.bio;
     user.email = email || user.email;
 

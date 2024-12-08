@@ -42,7 +42,7 @@ export const signup = async (req, res) => {
     const user = await new User({
       email,
       password: hashedPassword,
-      username,
+      username: username.toLowerCase(),
       fullName,
     });
 

@@ -7,6 +7,7 @@ import { v2 as cloudinary } from "cloudinary";
 import authRoutes from "./routes/auth.routes.js";
 import usersRoutes from "./routes/user.routes.js";
 import postRoutes from "./routes/post.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 import { connectDB } from "./db/connectDB.js";
 
 const PORT = process.env.PORT || 8000;
@@ -29,6 +30,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 mongoose.connection.once("open", () => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
